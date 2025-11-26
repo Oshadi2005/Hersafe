@@ -1,0 +1,27 @@
+name: hersafe_sprint1
+description: HerSafe Sprint 1 App
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.17.9
+  cloud_firestore: ^4.17.5
+  geolocator: ^11.0.0
+  provider: ^6.0.5
+  url_launcher: ^6.1.10
+  google_maps_flutter: ^2.3.0
+  permission_handler: ^12.0.1
+  share_plus: ^7.0.0  # ✅ Added for Share.share()
+  
+dev_dependencies:
+  flutter_lints: ^3.0.1  # ✅ Added to fix analysis_options.yaml
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - Assets/Images/hersafe_logo.png

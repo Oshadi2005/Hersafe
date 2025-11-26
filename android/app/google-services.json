@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "333003281934",
+    "project_id": "hersafe-e785d",
+    "storage_bucket": "hersafe-e785d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:333003281934:android:e29bb8b7ea90ae90730e5f",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9rZsVuqqOxsUspwaVPqDtrs6pAxkcvaM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
