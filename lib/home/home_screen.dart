@@ -21,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _selectedIndex = 0;
 
-
   final String selectedContactNumber = '+94712345678';
 
   @override
@@ -57,20 +56,47 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// SOS with confirmation dialog
   void _sendSOS() async {
-    try {
-      await _sosService.sendSOS(_currentLocation, selectedContactNumber);
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => ContactsListScreen()),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('SOS sent! Select a trusted contact for follow-up.')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm SOS'),
+          content: const Text(
+            'Are you sure you want to send an SOS alert? '
+            'This will notify your trusted contact immediately.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Send SOS'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      try {
+        await _sosService.sendSOS(_currentLocation, selectedContactNumber);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ContactsListScreen()),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('SOS sent! Select a trusted contact for follow-up.')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send SOS: $e')),
+        );
+      }
     }
   }
 

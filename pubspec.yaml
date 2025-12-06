@@ -7,18 +7,47 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # Firebase (authentication + database)
   firebase_core: ^2.32.0
   firebase_auth: ^4.17.9
   cloud_firestore: ^4.17.5
+
+  # Location + Maps
   geolocator: ^11.0.0
-  provider: ^6.0.5
-  url_launcher: ^6.1.10
   google_maps_flutter: ^2.3.0
+
+  # Permissions
   permission_handler: ^12.0.1
-  share_plus: ^7.0.0  # ✅ Added for Share.share()
-  
+
+  # State Management
+  provider: ^6.0.5
+
+  # Linking / calling
+  url_launcher: ^6.1.10
+
+  # Share location link / text
+  share_plus: ^7.0.0
+
+  # Flutter Material Icons / SVGs
+  flutter_svg: ^2.0.9
+
+  # 🔔 Notifications (optional, for alerts)
+  flutter_local_notifications: ^16.1.0
+
+  # 📳 Vibration feedback (optional, for SOS confirmation)
+  vibration: ^1.8.1
+
+  # 🌍 Internationalization (optional, for future localization)
+  intl: ^0.18.1
+
 dev_dependencies:
-  flutter_lints: ^3.0.1  # ✅ Added to fix analysis_options.yaml
+  flutter_test:
+    sdk: flutter
+
+  # Lints for good code formatting
+  flutter_lints: ^3.0.1
+
 
 flutter:
   uses-material-design: true

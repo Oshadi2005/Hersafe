@@ -5,24 +5,27 @@ class SosService {
   Future<void> sendSOS(String location, String contactNumber) async {
     final message = '🚨 I need help! My current location: $location';
 
-    final Uri smsUri = Uri(
-      scheme: 'sms',
-      path: contactNumber,
-      queryParameters: {'body': message},
-    );
+    // SMS first
+    final Uri smsUri = Uri.parse('sms:$contactNumber?body=${Uri.encodeComponent(message)}');
 
     try {
       if (await canLaunchUrl(smsUri)) {
-        await launchUrl(smsUri);
-      } else {
-        // Fallback to WhatsApp
-        final Uri whatsappUri = Uri.parse('https://wa.me/$contactNumber?text=${Uri.encodeComponent(message)}');
-        if (await canLaunchUrl(whatsappUri)) {
-          await launchUrl(whatsappUri);
-        } else {
-          throw Exception('Could not launch SMS or WhatsApp');
-        }
+        await launchUrl(smsUri, mode: LaunchMode.externalApplication);
+        return;
       }
+
+      // WhatsApp fallback (remove +)
+      final String cleanNumber = contactNumber.replaceAll('+', '');
+      final Uri whatsappUri = Uri.parse(
+        'https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}'
+      );
+
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+
+      throw Exception('Could not launch SMS or WhatsApp');
     } catch (e) {
       throw Exception('Failed to send SOS: $e');
     }
@@ -34,7 +37,7 @@ class SosService {
 
     try {
       if (await canLaunchUrl(callUri)) {
-        await launchUrl(callUri);
+        await launchUrl(callUri, mode: LaunchMode.externalApplication);
       } else {
         throw Exception('Call app not available');
       }
