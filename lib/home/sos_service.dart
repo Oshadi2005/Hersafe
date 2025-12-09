@@ -1,47 +1,57 @@
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:developer' as developer;
 
 class SosService {
-  /// Sends an SOS message via SMS or WhatsApp using the selected contact's number.
+  /// Sends an SOS message via SMS app if available. Falls back to share sheet.
   Future<void> sendSOS(String location, String contactNumber) async {
     final message = '🚨 I need help! My current location: $location';
 
-    // SMS first
-    final Uri smsUri = Uri.parse('sms:$contactNumber?body=${Uri.encodeComponent(message)}');
+    final Uri smsUri = Uri(
+      scheme: 'sms',
+      path: contactNumber,
+      queryParameters: {'body': message},
+    );
+
+    developer.log('Attempting to send SOS. smsUri: $smsUri', name: 'SosService');
 
     try {
-      if (await canLaunchUrl(smsUri)) {
-        await launchUrl(smsUri, mode: LaunchMode.externalApplication);
-        return;
+      final canLaunchSms = await canLaunchUrl(smsUri);
+      developer.log('canLaunchUrl(smsUri) => $canLaunchSms', name: 'SosService');
+
+      if (canLaunchSms) {
+        final launched = await launchUrl(smsUri, mode: LaunchMode.externalApplication);
+        developer.log('launchUrl(smsUri) returned $launched', name: 'SosService');
+
+        if (!launched) {
+          // launch failed even though canLaunch said true — fallback
+          developer.log('launchUrl returned false — falling back to Share', name: 'SosService');
+          await Share.share(message);
+        }
+      } else {
+        // No SMS app available — open share sheet so user can choose an app
+        developer.log('No handler for SMS intent. Using Share as fallback.', name: 'SosService');
+        await Share.share(message);
       }
-
-      // WhatsApp fallback (remove +)
-      final String cleanNumber = contactNumber.replaceAll('+', '');
-      final Uri whatsappUri = Uri.parse(
-        'https://wa.me/$cleanNumber?text=${Uri.encodeComponent(message)}'
-      );
-
-      if (await canLaunchUrl(whatsappUri)) {
-        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-        return;
-      }
-
-      throw Exception('Could not launch SMS or WhatsApp');
-    } catch (e) {
+    } catch (e, st) {
+      developer.log('Exception sending SOS: $e\n$st', name: 'SosService', error: e);
       throw Exception('Failed to send SOS: $e');
     }
   }
 
-  /// Initiates a direct call to the selected contact.
   Future<void> callEmergency(String contactNumber) async {
     final Uri callUri = Uri(scheme: 'tel', path: contactNumber);
+    developer.log('Attempting call to $callUri', name: 'SosService');
 
     try {
       if (await canLaunchUrl(callUri)) {
-        await launchUrl(callUri, mode: LaunchMode.externalApplication);
+        final launched = await launchUrl(callUri, mode: LaunchMode.externalApplication);
+        if (!launched) throw Exception('Platform failed to launch dialer');
       } else {
         throw Exception('Call app not available');
       }
     } catch (e) {
+      developer.log('Exception initiating call: $e', name: 'SosService', error: e);
       throw Exception('Failed to initiate call: $e');
     }
   }

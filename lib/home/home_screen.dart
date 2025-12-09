@@ -85,16 +85,25 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed == true) {
       try {
         await _sosService.sendSOS(_currentLocation, selectedContactNumber);
+
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => ContactsListScreen()),
         );
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('SOS sent! Select a trusted contact for follow-up.')),
+          const SnackBar(
+            content: Text('SOS sent! Select a trusted contact for follow-up.'),
+          ),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to send SOS: $e')),
+          SnackBar(
+            content: Text(
+              'Failed to send SOS: ${e.toString()}\n'
+              'Opening share options instead.',
+            ),
+          ),
         );
       }
     }
@@ -121,16 +130,16 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         break;
       case 1:
-        // Map screen (future)
         break;
       case 2:
-        // Alerts screen (future)
         break;
       case 3:
-        Navigator.push(context, MaterialPageRoute(builder: (_) => ContactsListScreen()));
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ContactsListScreen()),
+        );
         break;
       case 4:
-        // Settings screen (future)
         break;
     }
   }
@@ -160,19 +169,22 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Emergency Message
+            // SOS CARD
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                boxShadow: [
+                  BoxShadow(color: Colors.black12, blurRadius: 10)
+                ],
               ),
               child: Column(
                 children: [
                   const Text(
                     'Are you in an emergency?',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -184,44 +196,60 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: _sendSOS,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
-                    child: const Text('SEND SOS', style: TextStyle(fontSize: 20, color: Colors.white)),
+                    child: const Text(
+                      'SEND SOS',
+                      style: TextStyle(fontSize: 20, color: Colors.white),
+                    ),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 20),
 
-            // Location Card
+            // LOCATION CARD
             Card(
               elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               child: ListTile(
-                leading: const Icon(Icons.location_on, color: Color(0xFF92487A)),
-                title: const Text('Your Current Location',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                leading: const Icon(Icons.location_on,
+                    color: Color(0xFF92487A)),
+                title: const Text(
+                  'Your Current Location',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 subtitle: Text(_currentLocation),
               ),
             ),
+
             const SizedBox(height: 20),
 
-            // Action Buttons
+            // ACTION BUTTONS
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _actionButton(Icons.edit, 'Edit Contacts', () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => ContactsListScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ContactsListScreen()),
+                  );
                 }),
-                _actionButton(Icons.share_location, 'Share Location', _shareLocation),
+                _actionButton(Icons.share_location, 'Share Location',
+                    _shareLocation),
                 _actionButton(Icons.call, 'Voice Call', _makeCall),
               ],
             ),
+
             const SizedBox(height: 30),
 
-            // Map Preview Placeholder
+            // MAP PREVIEW PLACEHOLDER
             Container(
               height: 200,
               decoration: BoxDecoration(
@@ -229,13 +257,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Center(
-                child: Text('Map Preview Coming Soon',
-                    style: TextStyle(color: Colors.black54)),
+                child: Text(
+                  'Map Preview Coming Soon',
+                  style: TextStyle(color: Colors.black54),
+                ),
               ),
             ),
           ],
         ),
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onNavTap,
@@ -244,15 +275,19 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Alerts'),
-          BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.notifications), label: 'Alerts'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.contacts), label: 'Contacts'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
     );
   }
 
-  Widget _actionButton(IconData icon, String label, VoidCallback onPressed) {
+  Widget _actionButton(
+      IconData icon, String label, VoidCallback onPressed) {
     return Column(
       children: [
         ElevatedButton(
