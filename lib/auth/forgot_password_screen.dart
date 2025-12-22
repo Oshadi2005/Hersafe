@@ -32,6 +32,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     if (res == null) {
       _show("Reset link sent! Check your email.");
+      // ignore: use_build_context_synchronously
       Navigator.pop(context);
     } else {
       _show(res);

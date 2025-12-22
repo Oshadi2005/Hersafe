@@ -40,6 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (res == null) {
       Navigator.pushAndRemoveUntil(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
         (_) => false,
