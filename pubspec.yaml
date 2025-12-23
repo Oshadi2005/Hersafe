@@ -8,7 +8,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Firebase (authentication + database)
+  # Firebase 
   firebase_core: ^2.32.0
   firebase_auth: ^4.17.9
   cloud_firestore: ^4.17.5
@@ -23,6 +23,12 @@ dependencies:
   # State Management
   provider: ^6.0.5
 
+  # HTTP requests (🚨 needed for Directions API)
+  http: ^1.2.0
+
+  # For decoding Google polylines
+  flutter_polyline_points: ^2.0.0
+
   # Linking / calling
   url_launcher: ^6.1.10
 
@@ -32,22 +38,19 @@ dependencies:
   # Flutter Material Icons / SVGs
   flutter_svg: ^2.0.9
 
-  # 🔔 Notifications (optional, for alerts)
+  # Notifications
   flutter_local_notifications: ^16.1.0
 
-  # 📳 Vibration feedback (optional, for SOS confirmation)
+  # Vibration 
   vibration: ^1.8.1
 
-  # 🌍 Internationalization (optional, for future localization)
+  # Localization
   intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # Lints for good code formatting
   flutter_lints: ^3.0.1
-
 
 flutter:
   uses-material-design: true
