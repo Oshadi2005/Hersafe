@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import '../home/location_service.dart';
 import 'safe_route_service.dart';
 import 'route_model.dart';
@@ -25,34 +26,51 @@ class _SafeRouteScreenState extends State<SafeRouteScreen> {
   }
 
   void _loadCurrentLocation() async {
-    final pos = await LocationService().getCurrentLocation();
-    setState(() {
-      currentLocation = LatLng(pos.latitude, pos.longitude);
-    });
+    try {
+      final pos = await LocationService().getPosition();
+      setState(() {
+        currentLocation = LatLng(pos.latitude, pos.longitude);
+      });
+    } catch (e) {
+      print("Error getting location: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Could not get location: $e")),
+      );
+    }
   }
 
   void _findSafeRoute() async {
     if (currentLocation == null || destination == null) return;
 
-    RouteModel safest = await safeRouteService.getSafestRoute(
-      currentLocation!.latitude,
-      currentLocation!.longitude,
-      destination!.latitude,
-      destination!.longitude,
-    );
+    try {
+      RouteModel safest = await safeRouteService.getSafestRoute(
+        currentLocation!.latitude,
+        currentLocation!.longitude,
+        destination!.latitude,
+        destination!.longitude,
+      );
 
-    setState(() {
-      _polylines = {
-        Polyline(
-          polylineId: const PolylineId("safe_route"),
-          points: safest.points,
-          color: Colors.green,
-          width: 6,
-        )
-      };
-    });
+      setState(() {
+        _polylines = {
+          Polyline(
+            polylineId: const PolylineId("safe_route"),
+            points: safest.points,
+            color: Colors.green,
+            width: 6,
+          )
+        };
+      });
 
-    _controller?.animateCamera(CameraUpdate.newLatLng(safest.points.first));
+      _controller?.animateCamera(CameraUpdate.newLatLng(safest.points.first));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll("Exception: ", "")),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   @override
@@ -76,7 +94,6 @@ class _SafeRouteScreenState extends State<SafeRouteScreen> {
                     setState(() => destination = latLng);
                   },
                 ),
-
                 Positioned(
                   bottom: 40,
                   left: 20,

@@ -7,17 +7,18 @@ class SafeRouteService {
   final SafetyScoringService scoringService = SafetyScoringService();
 
   Future<RouteModel> getSafestRoute(
-      double startLat,
-      double startLng,
-      double endLat,
-      double endLng) async {
-    
+      double startLat, double startLng, double endLat, double endLng) async {
     final routes = await directionsService.getRoutes(
       startLat,
       startLng,
       endLat,
       endLng,
     );
+
+    if (routes.isEmpty) {
+      throw Exception(
+          "No safe routes found. Please check your internet connection and API Key.");
+    }
 
     for (var route in routes) {
       route.safetyScore = scoringService.calculateScore(route.points);
@@ -28,4 +29,3 @@ class SafeRouteService {
     return routes.first;
   }
 }
-

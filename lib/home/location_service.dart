@@ -2,24 +2,30 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
-  final StreamController<String> _locationController = StreamController.broadcast();
+  final StreamController<String> _locationController =
+      StreamController.broadcast();
 
   Stream<String> get locationStream => _locationController.stream;
 
+  Future<Position> getPosition() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw Exception('Location permission denied');
+      }
+    }
+
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+  }
+
   Future<String> getCurrentLocation() async {
     try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
-          _locationController.add('Location permission denied');
-          return 'Location permission denied';
-        }
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+      Position position = await getPosition();
       String loc = '${position.latitude}, ${position.longitude}';
       _locationController.add(loc);
       return loc;
