@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import '../safe_route/safe_route_screen.dart';
 import '../contacts/contacts_list_screen.dart';
 import '../auth/auth_service.dart';
 import '../auth/login_screen.dart';
@@ -130,6 +131,10 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         break;
       case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => SafeRouteScreen()),
+        );
         break;
       case 2:
         break;
@@ -175,16 +180,13 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 10)
-                ],
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
               ),
               child: Column(
                 children: [
                   const Text(
                     'Are you in an emergency?',
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -219,8 +221,8 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               child: ListTile(
-                leading: const Icon(Icons.location_on,
-                    color: Color(0xFF92487A)),
+                leading:
+                    const Icon(Icons.location_on, color: Color(0xFF92487A)),
                 title: const Text(
                   'Your Current Location',
                   style: TextStyle(fontWeight: FontWeight.bold),
@@ -241,8 +243,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (_) => ContactsListScreen()),
                   );
                 }),
-                _actionButton(Icons.share_location, 'Share Location',
-                    _shareLocation),
+                _actionButton(
+                    Icons.share_location, 'Share Location', _shareLocation),
                 _actionButton(Icons.call, 'Voice Call', _makeCall),
               ],
             ),
@@ -266,7 +268,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onNavTap,
@@ -286,8 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _actionButton(
-      IconData icon, String label, VoidCallback onPressed) {
+  Widget _actionButton(IconData icon, String label, VoidCallback onPressed) {
     return Column(
       children: [
         ElevatedButton(

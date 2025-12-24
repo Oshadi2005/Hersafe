@@ -5,7 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'route_model.dart';
 
 class DirectionsService {
-  final String apiKey = "YOUR_GOOGLE_MAPS_API_KEY";
+  final String apiKey = "AIzaSyAtAu4GATs9a6VefzSDR-yJntijzagYiGU";
 
   Future<List<RouteModel>> getRoutes(
       double startLat, double startLng, double endLat, double endLng) async {
