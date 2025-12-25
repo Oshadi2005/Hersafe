@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 import '../home/location_service.dart';
 import 'safe_route_service.dart';
-import 'route_model.dart';
 
 class SafeRouteScreen extends StatefulWidget {
+  const SafeRouteScreen({super.key});
+
   @override
-  _SafeRouteScreenState createState() => _SafeRouteScreenState();
+  SafeRouteScreenState createState() => SafeRouteScreenState();
 }
 
-class _SafeRouteScreenState extends State<SafeRouteScreen> {
+class SafeRouteScreenState extends State<SafeRouteScreen> {
   GoogleMapController? _controller;
   final SafeRouteService safeRouteService = SafeRouteService();
 
@@ -18,6 +18,7 @@ class _SafeRouteScreenState extends State<SafeRouteScreen> {
   LatLng? destination;
 
   Set<Polyline> _polylines = {};
+  Set<Marker> _markers = {};
 
   @override
   void initState() {
@@ -28,11 +29,13 @@ class _SafeRouteScreenState extends State<SafeRouteScreen> {
   void _loadCurrentLocation() async {
     try {
       final pos = await LocationService().getPosition();
+      if (!mounted) return;
       setState(() {
         currentLocation = LatLng(pos.latitude, pos.longitude);
       });
     } catch (e) {
-      print("Error getting location: $e");
+      debugPrint("Error getting location: $e");
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Could not get location: $e")),
       );
@@ -43,13 +46,14 @@ class _SafeRouteScreenState extends State<SafeRouteScreen> {
     if (currentLocation == null || destination == null) return;
 
     try {
-      RouteModel safest = await safeRouteService.getSafestRoute(
+      final safest = await safeRouteService.getSafestRoute(
         currentLocation!.latitude,
         currentLocation!.longitude,
         destination!.latitude,
         destination!.longitude,
       );
 
+      if (!mounted) return;
       setState(() {
         _polylines = {
           Polyline(
@@ -59,15 +63,37 @@ class _SafeRouteScreenState extends State<SafeRouteScreen> {
             width: 6,
           )
         };
+        _markers.add(
+          Marker(
+            markerId: const MarkerId("destination"),
+            position: destination!,
+            infoWindow: const InfoWindow(title: "Destination"),
+          ),
+        );
       });
 
-      _controller?.animateCamera(CameraUpdate.newLatLng(safest.points.first));
+      _controller?.animateCamera(CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: safest.points.first,
+          northeast: safest.points.last,
+        ),
+        50,
+      ));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Safety Score: ${safest.safetyScore}"),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceAll("Exception: ", "")),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
+          duration: const Duration(seconds: 5),
         ),
       );
     }
@@ -76,9 +102,9 @@ class _SafeRouteScreenState extends State<SafeRouteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Safe Route")),
+      appBar: AppBar(title: const Text("Safe Route")),
       body: currentLocation == null
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
                 GoogleMap(
@@ -89,9 +115,20 @@ class _SafeRouteScreenState extends State<SafeRouteScreen> {
                   myLocationEnabled: true,
                   myLocationButtonEnabled: true,
                   polylines: _polylines,
+                  markers: _markers,
                   onMapCreated: (ctrl) => _controller = ctrl,
                   onTap: (latLng) {
-                    setState(() => destination = latLng);
+                    debugPrint("Destination selected: $latLng");
+                    setState(() {
+                      destination = latLng;
+                      _markers = {
+                        Marker(
+                          markerId: const MarkerId("destination"),
+                          position: latLng,
+                          infoWindow: const InfoWindow(title: "Destination"),
+                        )
+                      };
+                    });
                   },
                 ),
                 Positioned(
@@ -100,7 +137,7 @@ class _SafeRouteScreenState extends State<SafeRouteScreen> {
                   right: 20,
                   child: ElevatedButton(
                     onPressed: _findSafeRoute,
-                    child: Text("Find Safe Route"),
+                    child: const Text("Find Safe Route"),
                   ),
                 ),
               ],
