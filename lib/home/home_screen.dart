@@ -1,3 +1,4 @@
+// ... [imports remain unchanged]
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../safe_route/safe_route_screen.dart';
@@ -23,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final String selectedContactNumber = '+94712345678';
 
-  // NEW: Safe Route status
   int? _lastSafetyScore;
 
   @override
@@ -192,42 +192,45 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // SOS CARD
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'Are you in an emergency?',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            // SOS BUTTON (Stylized)
+            Center(
+              child: GestureDetector(
+                onTap: _sendSOS,
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.red.shade900,
+                        Colors.red.shade700,
+                        Colors.red.shade500,
+                        Colors.red.shade300,
+                        Colors.red.shade100,
+                      ],
+                      stops: [0.2, 0.4, 0.6, 0.8, 1.0],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.shade200,
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Stay connected with HerSafe',
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _sendSOS,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16, horizontal: 32),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                  child: const Center(
+                    child: Text(
+                      'SOS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
                       ),
                     ),
-                    child: const Text(
-                      'SEND SOS',
-                      style: TextStyle(fontSize: 20, color: Colors.white),
-                    ),
                   ),
-                ],
+                ),
               ),
             ),
 
@@ -307,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-            bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onNavTap,
         selectedItemColor: const Color(0xFF92487A),
