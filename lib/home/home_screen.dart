@@ -21,8 +21,10 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
 
   int _selectedIndex = 0;
-
   final String selectedContactNumber = '+94712345678';
+
+  // NEW: Safe Route status
+  int? _lastSafetyScore;
 
   @override
   void initState() {
@@ -46,18 +48,19 @@ class _HomeScreenState extends State<HomeScreen> {
   void _logout() async {
     try {
       await _authService.logout();
+      if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => LoginScreen()),
         (Route<dynamic> route) => false,
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to log out: $e')),
       );
     }
   }
 
-  /// SOS with confirmation dialog
   void _sendSOS() async {
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -86,18 +89,18 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed == true) {
       try {
         await _sosService.sendSOS(_currentLocation, selectedContactNumber);
-
+        if (!mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => ContactsListScreen()),
         );
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('SOS sent! Select a trusted contact for follow-up.'),
           ),
         );
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -119,9 +122,21 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       await _sosService.callEmergency(selectedContactNumber);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
+    }
+  }
+
+  void _openSafeRoute() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => SafeRouteScreen()),
+    );
+
+    if (result is int) {
+      setState(() => _lastSafetyScore = result);
     }
   }
 
@@ -131,10 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         break;
       case 1:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => SafeRouteScreen()),
-        );
+        _openSafeRoute();
         break;
       case 2:
         break;
@@ -153,6 +165,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _locationService.dispose();
     super.dispose();
+  }
+
+  Color _statusColor(int score) {
+    if (score >= 15) return Colors.green;
+    if (score >= 8) return Colors.orange;
+    return Colors.red;
   }
 
   @override
@@ -180,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
               ),
               child: Column(
                 children: [
@@ -243,32 +261,53 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (_) => ContactsListScreen()),
                   );
                 }),
-                _actionButton(
-                    Icons.share_location, 'Share Location', _shareLocation),
+                _actionButton(Icons.share_location, 'Share Location', _shareLocation),
                 _actionButton(Icons.call, 'Voice Call', _makeCall),
+                _actionButton(Icons.map, 'Safe Route', _openSafeRoute),
               ],
             ),
 
             const SizedBox(height: 30),
 
-            // MAP PREVIEW PLACEHOLDER
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(16),
+            // SAFE ROUTE STATUS CARD
+            if (_lastSafetyScore != null)
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                child: ListTile(
+                  leading: Icon(Icons.shield, color: _statusColor(_lastSafetyScore!)),
+                  title: const Text(
+                    'Safe Route Status',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text('Safety Score: $_lastSafetyScore'),
+                ),
               ),
-              child: const Center(
-                child: Text(
-                  'Map Preview Coming Soon',
-                  style: TextStyle(color: Colors.black54),
+
+            const SizedBox(height: 30),
+
+            // MAP PREVIEW PLACEHOLDER
+            GestureDetector(
+              onTap: _openSafeRoute,
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Tap to open Safe Route',
+                    style: TextStyle(color: Colors.black54),
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+            bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onNavTap,
         selectedItemColor: const Color(0xFF92487A),
@@ -276,12 +315,9 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.notifications), label: 'Alerts'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.contacts), label: 'Contacts'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Alerts'),
+          BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
     );
