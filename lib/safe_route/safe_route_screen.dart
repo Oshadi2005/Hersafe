@@ -87,6 +87,10 @@ class SafeRouteScreenState extends State<SafeRouteScreen> {
           duration: const Duration(seconds: 4),
         ),
       );
+
+      // ✅ Return safety score to HomeScreen
+      Navigator.pop(context, safest.safetyScore);
+
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
