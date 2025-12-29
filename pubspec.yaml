@@ -1,5 +1,7 @@
 name: hersafe_sprint1
 description: HerSafe Sprint 1 App
+publish_to: 'none'
+version: 1.0.0+1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -8,14 +10,16 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Maps
+  google_maps_flutter: ^2.14.0
+
   # Firebase 
   firebase_core: ^2.32.0
   firebase_auth: ^4.17.9
   cloud_firestore: ^4.17.5
 
-  # Location + Maps
+  # Location
   geolocator: ^11.0.0
-  google_maps_flutter: ^2.3.0
 
   # Permissions
   permission_handler: ^12.0.1
@@ -23,7 +27,7 @@ dependencies:
   # State Management
   provider: ^6.0.5
 
-  # HTTP requests (🚨 needed for Directions API)
+  # HTTP requests (needed for Directions API)
   http: ^1.2.0
 
   # For decoding Google polylines

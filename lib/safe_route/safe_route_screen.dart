@@ -1,151 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../home/location_service.dart';
 import 'safe_route_service.dart';
+import 'route_model.dart';
 
 class SafeRouteScreen extends StatefulWidget {
   const SafeRouteScreen({super.key});
 
   @override
-  SafeRouteScreenState createState() => SafeRouteScreenState();
+  _SafeRouteScreenState createState() => _SafeRouteScreenState();
 }
 
-class SafeRouteScreenState extends State<SafeRouteScreen> {
+class _SafeRouteScreenState extends State<SafeRouteScreen> {
   GoogleMapController? _controller;
   final SafeRouteService safeRouteService = SafeRouteService();
+  LatLng start = LatLng(6.9271, 79.8612); // Colombo
+  LatLng end = LatLng(6.9275, 79.8670);
 
-  LatLng? currentLocation;
-  LatLng? destination;
-
-  Set<Polyline> _polylines = {};
-  Set<Marker> _markers = {};
+  List<Polyline> polylines = [];
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentLocation();
+    _loadRoutes();
   }
 
-  void _loadCurrentLocation() async {
-    try {
-      final pos = await LocationService().getPosition();
-      if (!mounted) return;
+  Future<void> _loadRoutes() async {
+    List<RouteModel> routes = await safeRouteService.fetchRoutes(start, end);
+    RouteModel? safest = safeRouteService.getSafestRoute(routes);
+
+    if (safest != null) {
       setState(() {
-        currentLocation = LatLng(pos.latitude, pos.longitude);
-      });
-    } catch (e) {
-      debugPrint("Error getting location: $e");
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Could not get location: $e")),
-      );
-    }
-  }
-
-  void _findSafeRoute() async {
-    if (currentLocation == null || destination == null) return;
-
-    try {
-      final safest = await safeRouteService.getSafestRoute(
-        currentLocation!.latitude,
-        currentLocation!.longitude,
-        destination!.latitude,
-        destination!.longitude,
-      );
-
-      if (!mounted) return;
-      setState(() {
-        _polylines = {
+        polylines = [
           Polyline(
-            polylineId: const PolylineId("safe_route"),
+            polylineId: const PolylineId('safest'),
             points: safest.points,
-            color: Colors.green,
-            width: 6,
+            color: safeRouteService.getRouteColor(safeRouteService.engine.scoreRoute(safest)),
+            width: 5,
           )
-        };
-        _markers.add(
-          Marker(
-            markerId: const MarkerId("destination"),
-            position: destination!,
-            infoWindow: const InfoWindow(title: "Destination"),
-          ),
-        );
+        ];
       });
 
-      _controller?.animateCamera(CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: safest.points.first,
-          northeast: safest.points.last,
-        ),
-        50,
-      ));
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Safety Score: ${safest.safetyScore}"),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-
-      // ✅ Return safety score to HomeScreen
-      Navigator.pop(context, safest.safetyScore);
-
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll("Exception: ", "")),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-        ),
-      );
+      LatLngBounds bounds = _boundsFromLatLngList(safest.points);
+      _controller?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
     }
+  }
+
+  LatLngBounds _boundsFromLatLngList(List<LatLng> list) {
+    double x0 = list[0].latitude;
+    double x1 = list[0].latitude;
+    double y0 = list[0].longitude;
+    double y1 = list[0].longitude;
+
+    for (LatLng latLng in list) {
+      if (latLng.latitude > x1) x1 = latLng.latitude;
+      if (latLng.latitude < x0) x0 = latLng.latitude;
+      if (latLng.longitude > y1) y1 = latLng.longitude;
+      if (latLng.longitude < y0) y0 = latLng.longitude;
+    }
+    return LatLngBounds(
+      southwest: LatLng(x0, y0),
+      northeast: LatLng(x1, y1),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Safe Route")),
-      body: currentLocation == null
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: currentLocation!,
-                    zoom: 15,
-                  ),
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: true,
-                  polylines: _polylines,
-                  markers: _markers,
-                  onMapCreated: (ctrl) => _controller = ctrl,
-                  onTap: (latLng) {
-                    debugPrint("Destination selected: $latLng");
-                    setState(() {
-                      destination = latLng;
-                      _markers = {
-                        Marker(
-                          markerId: const MarkerId("destination"),
-                          position: latLng,
-                          infoWindow: const InfoWindow(title: "Destination"),
-                        )
-                      };
-                    });
-                  },
-                ),
-                Positioned(
-                  bottom: 40,
-                  left: 20,
-                  right: 20,
-                  child: ElevatedButton(
-                    onPressed: _findSafeRoute,
-                    child: const Text("Find Safe Route"),
-                  ),
-                ),
-              ],
-            ),
+      appBar: AppBar(title: const Text('Safe Route')),
+      body: GoogleMap(
+        initialCameraPosition: CameraPosition(target: start, zoom: 14),
+        polylines: Set<Polyline>.of(polylines),
+        onMapCreated: (controller) => _controller = controller,
+        myLocationEnabled: true,
+        myLocationButtonEnabled: true,
+      ),
     );
   }
 }
