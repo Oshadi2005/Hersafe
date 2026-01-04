@@ -12,39 +12,36 @@ class SafetyEngine {
   double scoreRoute(RouteModel route) {
     double score = 100;
 
-    // ✦ Penalize distance & duration
-    score -= (route.distance / 1000);   // 1 point per km
-    score -= (route.duration / 300);    // -1 per 5 minutes
+    score -= (route.distance / 1000);
+    score -= (route.duration / 300);
 
-    // ✦ Reward proximity to safe points (street lights, police, shops etc.)
     for (final p in route.points) {
       for (final s in safePoints) {
-        final d = _dist(p, s);
+        final d = _haversine(p, s);
         if (d < 200) score += 5;
         if (d < 100) score += 8;
       }
     }
 
-    // ✦ Reward profile (walking preferred)
     if (route.profile == 'foot-walking') score += 5;
     if (route.profile == 'cycling-regular') score += 3;
 
     return score.clamp(0, 100);
   }
 
-  double _dist(LatLng a, LatLng b) {
-    const R = 6371000.0;
+  double _haversine(LatLng a, LatLng b) {
+    const R = 6371000;
     final dLat = _rad(b.latitude - a.latitude);
     final dLon = _rad(b.longitude - a.longitude);
 
     final lat1 = _rad(a.latitude);
     final lat2 = _rad(b.latitude);
 
-    final h = sin(dLat/2)*sin(dLat/2) +
-        sin(dLon/2)*sin(dLon/2)*cos(lat1)*cos(lat2);
+    final h = sin(dLat / 2) * sin(dLat / 2) +
+        sin(dLon / 2) * sin(dLon / 2) * cos(lat1) * cos(lat2);
 
-    return 2 * R * atan2(sqrt(h), sqrt(1-h));
+    return 2 * R * atan2(sqrt(h), sqrt(1 - h));
   }
 
-  double _rad(double x) => x * (pi / 180);
+  double _rad(double d) => d * (pi / 180);
 }
