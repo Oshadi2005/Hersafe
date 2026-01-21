@@ -29,6 +29,7 @@ class WelcomeScreen extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
+                          // ignore: deprecated_member_use
                           color: Colors.pink.withOpacity(0.3),
                           blurRadius: 20,
                           spreadRadius: 5,
@@ -55,6 +56,7 @@ class WelcomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
+                            // ignore: deprecated_member_use
                             color: Colors.grey.withOpacity(0.15),
                             blurRadius: 20,
                             offset: const Offset(0, 8),

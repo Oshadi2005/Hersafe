@@ -41,6 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'email': _emailCtrl.text.trim(),
         'phone': _phoneCtrl.text.trim(),
       });
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully')),
       );

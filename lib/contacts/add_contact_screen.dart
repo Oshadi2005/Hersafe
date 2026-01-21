@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'contacts_service.dart';
+import 'trusted_contact_model.dart';
 
 class AddContactScreen extends StatefulWidget {
   const AddContactScreen({super.key});
@@ -9,59 +10,65 @@ class AddContactScreen extends StatefulWidget {
 }
 
 class _AddContactScreenState extends State<AddContactScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
-  final ContactsService _contactsService = ContactsService();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _service = ContactsService();
 
   void _saveContact() async {
-    if (_formKey.currentState!.validate()) {
-      await _contactsService.addContact({
-        'name': _nameCtrl.text.trim(),
-        'phone': _phoneCtrl.text.trim(),
-      });
-      Navigator.pop(context);
-    }
-  }
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
 
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _phoneCtrl.dispose();
-    super.dispose();
+    if (name.isEmpty || phone.isEmpty) return;
+
+    await _service.addContactAsync(TrustedContact(name: name, phone: phone));
+
+    if (!mounted) return;
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Contact')),
+      appBar: AppBar(
+        title: const Text('Add Contact'),
+        backgroundColor: const Color.fromARGB(255, 110, 11, 103),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Enter name' : null,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneCtrl,
-                decoration: const InputDecoration(labelText: 'Phone'),
-                keyboardType: TextInputType.phone,
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Enter phone' : null,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Phone',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
                 onPressed: _saveContact,
-                child: const Text('Save Contact'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 146, 28, 138),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Add Contact', style: TextStyle(fontSize: 16)),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

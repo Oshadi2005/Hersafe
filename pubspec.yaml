@@ -10,13 +10,18 @@ dependencies:
   flutter:
     sdk: flutter
 
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.2.2
+
   # Maps
   google_maps_flutter: ^2.14.0
 
-  # Firebase 
+  # Firebase
   firebase_core: ^2.32.0
   firebase_auth: ^4.17.9
-  cloud_firestore: ^4.17.5
+  cloud_firestore: ^4.15.0
+
 
   # Location
   geolocator: ^11.0.0
@@ -27,26 +32,26 @@ dependencies:
   # State Management
   provider: ^6.0.5
 
-  # HTTP requests (needed for Directions API)
+  # HTTP requests
   http: ^1.2.0
 
-  # For decoding Google polylines
+  # Polylines
   flutter_polyline_points: ^2.0.0
 
   # Linking / calling
-  url_launcher: ^6.1.10
+  url_launcher: ^6.2.5
 
-  # Share location link / text
+  # Share
   share_plus: ^7.0.0
 
-  # Flutter Material Icons / SVGs
+  # SVGs
   flutter_svg: ^2.0.9
 
   # Notifications
-  flutter_local_notifications: ^16.1.0
+  flutter_local_notifications: ^17.1.0
 
-  # Vibration 
-  vibration: ^1.8.1
+  # Vibration
+  vibration: ^3.1.5
 
   # Localization
   intl: ^0.18.1
@@ -55,9 +60,24 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
-
 flutter:
   uses-material-design: true
 
   assets:
     - Assets/Images/hersafe_logo.png
+    - Assets/Images/helpline/police.jpg
+    - Assets/Images/helpline/ambulance.png
+    - Assets/Images/helpline/abuse.png
+    - Assets/Images/helpline/women.png
+    - Assets/Images/helpline/win.png
+    - Assets/Images/helpline/legal.png
+    - Assets/Images/helpline/mental.png
+    - Assets/Images/helpline/legal_aid.png
+    - Assets/Images/helpline/shelter.png
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: Assets/Images/fonts/Poppins-Regular.ttf
+        - asset: Assets/Images/fonts/Poppins-Medium.ttf
+        - asset: Assets/Images/fonts/Poppins-Bold.ttf

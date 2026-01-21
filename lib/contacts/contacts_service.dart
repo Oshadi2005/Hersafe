@@ -1,26 +1,48 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'trusted_contact_model.dart';
 
 class ContactsService {
-  final CollectionReference _contactsCollection =
-      FirebaseFirestore.instance.collection('emergency_contacts');
+  static const _storageKey = 'trusted_contacts';
 
-  // Add new contact
-  Future<void> addContact(Map<String, dynamic> contactData) async {
-    await _contactsCollection.add(contactData);
+  // Get all contacts
+  Future<List<TrustedContact>> getContactsAsync() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = prefs.getString(_storageKey);
+    if (jsonStr == null) return [];
+    final List decoded = json.decode(jsonStr);
+    return decoded.map((e) => TrustedContact.fromJson(e)).toList();
   }
 
-  // Update contact
-  Future<void> updateContact(String id, Map<String, dynamic> contactData) async {
-    await _contactsCollection.doc(id).update(contactData);
+  // Add a new contact
+  Future<void> addContactAsync(TrustedContact contact) async {
+    final contacts = await getContactsAsync();
+    contacts.add(contact);
+    await _saveContacts(contacts);
   }
 
-  // Delete contact
-  Future<void> deleteContact(String id) async {
-    await _contactsCollection.doc(id).delete();
+  // Update an existing contact
+  Future<void> updateContactAsync(int index, TrustedContact contact) async {
+    final contacts = await getContactsAsync();
+    if (index >= 0 && index < contacts.length) {
+      contacts[index] = contact;
+      await _saveContacts(contacts);
+    }
   }
 
-  // Fetch contacts stream
-  Stream<QuerySnapshot> getContactsStream() {
-    return _contactsCollection.orderBy('name').snapshots();
+  // Delete a contact
+  Future<void> deleteContact(int index) async {
+    final contacts = await getContactsAsync();
+    if (index >= 0 && index < contacts.length) {
+      contacts.removeAt(index);
+      await _saveContacts(contacts);
+    }
+  }
+
+  // Save contacts to SharedPreferences
+  Future<void> _saveContacts(List<TrustedContact> contacts) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonStr = json.encode(contacts.map((e) => e.toJson()).toList());
+    await prefs.setString(_storageKey, jsonStr);
   }
 }

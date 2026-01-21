@@ -1,12 +1,16 @@
-// ... [imports remain unchanged]
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
-import '../safe_route/safe_route_screen.dart';
-import '../contacts/contacts_list_screen.dart';
+
 import '../auth/auth_service.dart';
 import '../auth/login_screen.dart';
-import 'location_service.dart';
+import '../contacts/trusted_contact_model.dart';
+import '../contacts/contacts_list_screen.dart';
+import '../safe_route/safe_route_screen.dart';
+import '../helpline/helpline_screen.dart';
+import '../location_share/location_share_screen.dart';
 import 'sos_service.dart';
+
+import '../fake_call/fake_call_service.dart';
+import '../fake_call/fake_call_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,332 +19,312 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  String _currentLocation = 'Fetching...';
-  final LocationService _locationService = LocationService();
-  final SosService _sosService = SosService();
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
+  final SosService _sosService = SosService();
 
-  int _selectedIndex = 0;
-  final String selectedContactNumber = '+94712345678';
+  String _userName = '';
+  bool _isLoadingName = true; // Loading indicator
 
-  int? _lastSafetyScore;
+  final String _currentLocation =
+      'https://www.google.com/maps?q=6.9186379,79.861248';
+
+  final List<TrustedContact> _trustedContacts = [
+    TrustedContact(name: 'Mom', phone: '+94712345678'),
+    TrustedContact(name: 'Best Friend', phone: '+94771234567'),
+  ];
+
+  late AnimationController _sosController;
 
   @override
   void initState() {
     super.initState();
 
-    _locationService.locationStream.listen((location) {
-      if (mounted) {
-        setState(() => _currentLocation = location);
-      }
+    _sosController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final name = await _authService.getCurrentUserName();
+    if (!mounted) return;
+    setState(() {
+      _userName = name;
+      _isLoadingName = false; // Finished loading
     });
-
-    _locationService.getCurrentLocation().then((loc) {
-      if (mounted) {
-        setState(() => _currentLocation = loc);
-      }
-    });
-
-    _locationService.startLocationUpdates();
-  }
-
-  void _logout() async {
-    try {
-      await _authService.logout();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => LoginScreen()),
-        (Route<dynamic> route) => false,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to log out: $e')),
-      );
-    }
-  }
-
-  void _sendSOS() async {
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm SOS'),
-          content: const Text(
-            'Are you sure you want to send an SOS alert? '
-            'This will notify your trusted contact immediately.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Send SOS'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed == true) {
-      try {
-        await _sosService.sendSOS(_currentLocation, selectedContactNumber);
-        if (!mounted) return;
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ContactsListScreen()),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('SOS sent! Select a trusted contact for follow-up.'),
-          ),
-        );
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to send SOS: ${e.toString()}\n'
-              'Opening share options instead.',
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  void _shareLocation() {
-    final message = 'My current location: $_currentLocation';
-    Share.share(message);
-  }
-
-  void _makeCall() async {
-    try {
-      await _sosService.callEmergency(selectedContactNumber);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-    }
-  }
-
-  void _openSafeRoute() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => SafeRouteScreen()),
-    );
-
-    if (result is int) {
-      setState(() => _lastSafetyScore = result);
-    }
-  }
-
-  void _onNavTap(int index) {
-    setState(() => _selectedIndex = index);
-    switch (index) {
-      case 0:
-        break;
-      case 1:
-        _openSafeRoute();
-        break;
-      case 2:
-        break;
-      case 3:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ContactsListScreen()),
-        );
-        break;
-      case 4:
-        break;
-    }
   }
 
   @override
   void dispose() {
-    _locationService.dispose();
+    _sosController.dispose();
     super.dispose();
   }
 
-  Color _statusColor(int score) {
-    if (score >= 15) return Colors.green;
-    if (score >= 8) return Colors.orange;
-    return Colors.red;
+  Future<void> _logout() async {
+    await _authService.logout();
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
+  Future<bool> _confirmSOS() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Send SOS'),
+            content: const Text(
+                'This will send your live location to trusted contacts. Continue?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Send'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _sendSOS() async {
+    final confirmed = await _confirmSOS();
+    if (!confirmed) return;
+
+    await _sosService.sendSOS(
+      location: _currentLocation,
+      contacts: _trustedContacts,
+    );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('SOS sent successfully')),
+    );
+  }
+
+  void _triggerFakeCall() {
+    final callData = FakeCallModel(
+      callerName: "Best Friend",
+      callerImage: "assets/Images/helpline/women.png",
+      callDuration: 40,
+    );
+
+    FakeCallService.triggerInstantCall(context, callData);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDECEF),
-      appBar: AppBar(
-        title: const Text('HerSafe'),
-        backgroundColor: const Color(0xFF92487A),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-            tooltip: 'Logout',
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF7F7F7),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // SOS BUTTON (Stylized)
-            Center(
-              child: GestureDetector(
-                onTap: _sendSOS,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        Colors.red.shade900,
-                        Colors.red.shade700,
-                        Colors.red.shade500,
-                        Colors.red.shade300,
-                        Colors.red.shade100,
-                      ],
-                      stops: [0.2, 0.4, 0.6, 0.8, 1.0],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.shade200,
-                        blurRadius: 20,
-                        spreadRadius: 5,
+            // HEADER
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF5FA2), Color(0xFFFF2F92)],
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(),
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                        onPressed: _logout,
                       ),
                     ],
                   ),
-                  child: const Center(
-                    child: Text(
-                      'SOS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
+                  const CircleAvatar(
+                    radius: 38,
+                    backgroundImage:
+                        NetworkImage('https://i.pravatar.cc/150?img=47'),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _isLoadingName
+                        ? 'Loading...'
+                        : 'Welcome, $_userName',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
+                ],
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // LOCATION CARD
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              child: ListTile(
-                leading:
-                    const Icon(Icons.location_on, color: Color(0xFF92487A)),
-                title: const Text(
-                  'Your Current Location',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(_currentLocation),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // ACTION BUTTONS
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _actionButton(Icons.edit, 'Edit Contacts', () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => ContactsListScreen()),
-                  );
-                }),
-                _actionButton(Icons.share_location, 'Share Location', _shareLocation),
-                _actionButton(Icons.call, 'Voice Call', _makeCall),
-                _actionButton(Icons.map, 'Safe Route', _openSafeRoute),
-              ],
             ),
 
             const SizedBox(height: 30),
 
-            // SAFE ROUTE STATUS CARD
-            if (_lastSafetyScore != null)
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                child: ListTile(
-                  leading: Icon(Icons.shield, color: _statusColor(_lastSafetyScore!)),
-                  title: const Text(
-                    'Safe Route Status',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text('Safety Score: $_lastSafetyScore'),
-                ),
-              ),
-
-            const SizedBox(height: 30),
-
-            // MAP PREVIEW PLACEHOLDER
+            // 🔴 ANIMATED SOS
             GestureDetector(
-              onTap: _openSafeRoute,
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Center(
-                  child: Text(
-                    'Tap to open Safe Route',
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                ),
+              onTap: _sendSOS,
+              child: AnimatedBuilder(
+                animation: _sosController,
+                builder: (context, child) {
+                  final scale = 1 + (_sosController.value * 0.08);
+                  return Transform.scale(
+                    scale: scale,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 180,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.red.withOpacity(0.25),
+                          ),
+                        ),
+                        Container(
+                          width: 140,
+                          height: 140,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.red,
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'SOS',
+                              style: TextStyle(
+                                fontSize: 34,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
+
+            const SizedBox(height: 35),
+
+            // FEATURES GRID
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                children: [
+                  _featureCard(
+                    icon: Icons.contacts,
+                    color: Colors.purple,
+                    title: 'Trusted Contacts',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ContactsListScreen()),
+                    ),
+                  ),
+                  _featureCard(
+                    icon: Icons.location_on,
+                    color: Colors.green,
+                    title: 'Location Sharing',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const LocationShareScreen()),
+                    ),
+                  ),
+                  _featureCard(
+                    icon: Icons.directions_walk,
+                    color: Colors.blue,
+                    title: 'Safe Route',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const SafeRouteScreen()),
+                    ),
+                  ),
+                  _featureCard(
+                    icon: Icons.support_agent,
+                    color: Colors.orange,
+                    title: 'Helplines',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const HelplineScreen()),
+                    ),
+                  ),
+                  _featureCard(
+                    icon: Icons.phone_in_talk,
+                    color: Colors.pink,
+                    title: 'Fake Call',
+                    onTap: _triggerFakeCall,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onNavTap,
-        selectedItemColor: const Color(0xFF92487A),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Alerts'),
-          BottomNavigationBarItem(icon: Icon(Icons.contacts), label: 'Contacts'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
       ),
     );
   }
 
-  Widget _actionButton(IconData icon, String label, VoidCallback onPressed) {
-    return Column(
-      children: [
-        ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF92487A),
-            shape: const CircleBorder(),
-            padding: const EdgeInsets.all(16),
-          ),
-          child: Icon(icon, color: Colors.white),
+  Widget _featureCard({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
         ),
-        const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontSize: 12)),
-      ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 44, color: color),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

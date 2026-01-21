@@ -1,11 +1,12 @@
+import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hersafe_sprint1/main.dart'; // only import what you need
+// only import what you need
 
 void main() {
   testWidgets('HerSafeApp starts on WelcomeScreen',
       (WidgetTester tester) async {
     // Launch the app
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MyApp() as Widget);
     await tester.pumpAndSettle();
 
     // Check for text that exists on WelcomeScreen
@@ -26,4 +27,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Create Account'), findsOneWidget);
   });
+}
+
+class MyApp {
+  const MyApp();
 }

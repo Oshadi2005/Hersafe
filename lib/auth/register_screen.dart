@@ -62,6 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (res == null) {
       _show("Registration successful!");
       Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
@@ -95,9 +96,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onPressed: () => Navigator.pop(context),
               ),
               const SizedBox(height: 5),
-              Center(
+              const Center(
                 child: Column(
-                  children: const [
+                  children: [
                     Text(
                       "Create Account",
                       style: TextStyle(

@@ -38,6 +38,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     final allGranted = await _permissionsService.requestAllPermissions();
     _checkPermissions();
 
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(allGranted

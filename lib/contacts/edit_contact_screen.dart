@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'contacts_service.dart';
+import 'trusted_contact_model.dart';
 
 class EditContactScreen extends StatefulWidget {
-  final String contactId;
-  final Map<String, dynamic> existingData;
+  final int index;
+  final TrustedContact contact;
 
   const EditContactScreen({
     super.key,
-    required this.contactId,
-    required this.existingData,
+    required this.index,
+    required this.contact,
   });
 
   @override
@@ -16,66 +17,75 @@ class EditContactScreen extends StatefulWidget {
 }
 
 class _EditContactScreenState extends State<EditContactScreen> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameCtrl;
-  late TextEditingController _phoneCtrl;
-  final ContactsService _contactsService = ContactsService();
+  late TextEditingController _nameController;
+  late TextEditingController _phoneController;
+  final _service = ContactsService();
 
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.existingData['name']);
-    _phoneCtrl = TextEditingController(text: widget.existingData['phone']);
+    _nameController = TextEditingController(text: widget.contact.name);
+    _phoneController = TextEditingController(text: widget.contact.phone);
   }
 
-  void _updateContact() async {
-    if (_formKey.currentState!.validate()) {
-      await _contactsService.updateContact(widget.contactId, {
-        'name': _nameCtrl.text.trim(),
-        'phone': _phoneCtrl.text.trim(),
-      });
-      Navigator.pop(context);
-    }
-  }
+  void _saveChanges() async {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
 
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _phoneCtrl.dispose();
-    super.dispose();
+    if (name.isEmpty || phone.isEmpty) return;
+
+    await _service.updateContactAsync(
+      widget.index,
+      TrustedContact(name: name, phone: phone),
+    );
+
+    if (!mounted) return;
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Contact')),
+      appBar: AppBar(
+        title: const Text('Edit Contact'),
+        backgroundColor: const Color(0xFF6A1B9A),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Enter name' : null,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _phoneCtrl,
-                decoration: const InputDecoration(labelText: 'Phone'),
-                keyboardType: TextInputType.phone,
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Enter phone' : null,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Phone',
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _updateContact,
-                child: const Text('Update Contact'),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _saveChanges,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 146, 28, 138),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Save Changes', style: TextStyle(fontSize: 16)),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
